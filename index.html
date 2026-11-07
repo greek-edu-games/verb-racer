@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ρηματοδρόμος</title>
+<meta name="theme-color" content="#0b3d5c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ρηματοδρόμος">
+<style>
+  :root{
+    --sky0:#0b3d5c; --sky1:#1a6e9c; --grass:#2f9e5b; --track:#c9733a; --track2:#b0612f;
+    --card:#fff8e6; --cardInk:#2a1d0c; --dim:#bfe1f3; --ink:#f4fbff;
+    --gold:#fbbf24; --good:#22c55e; --bad:#ef4444; --accent:#ff7a1a; --p1:#ff7a1a; --p2:#8b5cf6;
+    --font:'Comfortaa','Noto Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  [hidden]{display:none !important}
+  html,body{height:100%}
+  body{
+    font-family:var(--font); color:var(--ink);
+    background:linear-gradient(180deg,var(--sky0) 0%,var(--sky1) 100%);
+    overflow:hidden; overscroll-behavior:none;
+    user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+  }
+  button,input{touch-action:manipulation;font:inherit}
+  button{cursor:pointer}
+  #app{position:fixed;inset:0}
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
+
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;gap:12px;
+    overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:10;
+    padding:calc(14px + env(safe-area-inset-top,0px)) calc(14px + env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) calc(14px + env(safe-area-inset-left,0px));
+    opacity:0;pointer-events:none;transition:opacity .25s}
+  .screen::before,.screen::after{content:'';flex:none;margin:auto}
+  .screen.on{opacity:1;pointer-events:auto}
+  .veil{background:rgba(4,24,38,.85);z-index:30}
+  .inner{width:100%;max-width:460px;display:flex;flex-direction:column;align-items:center;gap:12px}
+
+  h1{font-size:clamp(32px,10vw,52px);text-align:center;line-height:1;letter-spacing:-.5px;text-shadow:0 4px 16px rgba(0,0,0,.4)}
+  h1 small{display:block;font-size:clamp(13px,3.6vw,16px);font-weight:600;color:var(--dim);margin-top:8px;letter-spacing:.3px}
+  h2{font-size:22px;text-align:center}
+  .tagline{color:var(--dim);text-align:center;line-height:1.5;font-size:14px;max-width:380px}
+
+  .btn{min-height:48px;padding:12px 22px;font-size:17px;font-weight:800;color:#3a1c02;border:none;border-radius:16px;
+    background:linear-gradient(180deg,#ffd166,#ff9f1c);box-shadow:0 5px 0 #b86a00,0 8px 18px rgba(0,0,0,.35);transition:transform .08s}
+  .btn:active{transform:translateY(3px);box-shadow:0 2px 0 #b86a00}
+  .btn.ghost{background:rgba(255,255,255,.14);color:var(--ink);box-shadow:none;border:2px solid rgba(255,255,255,.3)}
+  .btn.ghost:active{transform:none;background:rgba(255,255,255,.24)}
+  .btn.big{font-size:20px;padding:14px 30px}
+
+  .seg{display:flex;gap:6px;width:100%}
+  .seg button{flex:1;min-height:48px;border-radius:14px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:var(--ink);font-weight:800;font-size:15px}
+  .seg button.on{background:var(--gold);color:#3a1c02;border-color:#fff}
+  .tiers{display:flex;flex-direction:column;gap:8px;width:100%}
+  .tier{display:flex;align-items:center;gap:10px;min-height:56px;width:100%;text-align:left;padding:8px 12px;border-radius:16px;
+    background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.22);color:var(--ink)}
+  .tier.on{background:rgba(251,191,36,.22);border-color:var(--gold)}
+  .tier .num{flex:none;width:34px;height:34px;border-radius:50%;background:var(--gold);color:#3a1c02;font-weight:900;display:grid;place-items:center}
+  .tier .tt{flex:1;min-width:0}
+  .tier b{display:block;font-size:16px}
+  .tier span{display:block;font-size:12px;color:var(--dim);line-height:1.3}
+  .tier .st{flex:none;font-size:15px;letter-spacing:1px;text-align:right}
+  .tier .st small{display:block;font-size:11px;color:var(--dim);letter-spacing:0}
+  .names{display:flex;gap:8px;width:100%}
+  .names label{flex:1;font-size:12px;color:var(--dim);display:flex;flex-direction:column;gap:4px}
+  .names input{min-height:44px;border-radius:12px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:var(--ink);padding:6px 10px;font-size:16px;width:100%;user-select:text;-webkit-user-select:text}
+  .mini{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));right:calc(8px + env(safe-area-inset-right,0px));z-index:5}
+  .ibtn{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(0,0,0,.25);color:var(--ink);font-size:20px;display:grid;place-items:center;flex:none}
+
+  .snail{width:100%;height:100%;overflow:visible}
+  .mascot{width:120px;height:90px}
+
+  /* ΠΙΣΤΑ */
+  #s-game{justify-content:flex-start;gap:8px;padding-top:calc(8px + env(safe-area-inset-top,0px))}
+  .hud{display:flex;align-items:center;gap:8px;width:100%;max-width:520px;flex:none}
+  .hud .mid{flex:1;text-align:center;line-height:1.2}
+  .hud .mid b{display:block;font-size:15px}
+  .hud .mid span{font-size:12px;color:var(--dim)}
+  #track{width:100%;max-width:520px;flex:none;background:var(--grass);border-radius:16px;padding:6px;display:flex;flex-direction:column;gap:5px;box-shadow:inset 0 0 0 3px rgba(0,0,0,.18)}
+  .lane{display:flex;align-items:center;gap:6px;height:42px}
+  .lane.act .rail{outline:3px solid var(--gold)}
+  .lname{flex:none;width:58px;font-size:11px;font-weight:800;line-height:1.1;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);overflow:hidden}
+  .rail{position:relative;flex:1;height:100%;border-radius:10px;
+    background:repeating-linear-gradient(90deg,var(--track) 0 calc(10% - 2px),var(--track2) calc(10% - 2px) 10%);}
+  .rail::after{content:'🏁';position:absolute;right:2px;top:50%;transform:translateY(-50%);font-size:20px;opacity:.9;z-index:0}
+  .runner{position:absolute;left:0;top:2px;width:44px;height:38px;z-index:2;transition:left .45s cubic-bezier(.3,1.4,.5,1)}
+  .runner .sp{display:block;width:100%;height:100%;font-size:30px;line-height:38px;text-align:center;transform:scaleX(-1)}
+  .runner.me .sp{transform:none}
+  .runner.run .sp{animation:bob .35s infinite alternate}
+  .runner.stumble .sp{animation:stumble .6s}
+  .runner.win .sp{animation:jump .5s infinite alternate}
+  .runner .wing{transform-origin:20px 14px;animation:flap .25s infinite alternate}
+  @keyframes bob{to{transform:translateY(-3px)}}
+  .runner.me.run .sp{animation:bob .35s infinite alternate}
+  @keyframes stumble{0%{transform:rotate(0)}25%{transform:rotate(-30deg) translateY(-4px)}55%{transform:rotate(18deg)}100%{transform:rotate(0)}}
+  @keyframes jump{to{transform:translateY(-10px)}}
+  @keyframes flap{to{transform:rotate(-22deg)}}
+  .runner.fin::after{content:'✔';position:absolute;right:-2px;top:-4px;font-size:14px;color:#fff;background:var(--good);border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center}
+
+  #qcard{width:100%;max-width:520px;background:var(--card);color:var(--cardInk);border-radius:20px;padding:12px 12px 14px;box-shadow:0 6px 0 #c9a96a,0 10px 24px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:8px;flex:none;position:relative}
+  #qkind{font-size:12px;font-weight:800;color:#a2511a;letter-spacing:.4px;text-transform:uppercase}
+  #qtext{font-size:clamp(18px,5vw,22px);font-weight:800;line-height:1.3}
+  #qsub{font-size:13px;color:#7a5a3a;min-height:0}
+  #opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .opt{min-height:58px;padding:8px 8px;border-radius:14px;border:3px solid #e1c98f;background:#fff;color:var(--cardInk);font-size:clamp(15px,4.3vw,18px);font-weight:800;line-height:1.2;overflow-wrap:anywhere;transition:transform .08s}
+  .opt:active{transform:scale(.97)}
+  .opt.ok{background:#b9f3c9;border-color:var(--good)}
+  .opt.no{background:#ffc9c9;border-color:var(--bad)}
+  .opt.dim{opacity:.55}
+  #fb{background:#fff;border:3px solid #e1c98f;border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.45}
+  #fb .hd{font-weight:900;font-size:16px}
+  #fb .hd.bad{color:#b91c1c}
+  #fb .rule{background:#fff3c4;border-radius:10px;padding:8px 10px}
+  #toast{position:absolute;left:50%;top:-18px;transform:translateX(-50%);background:var(--accent);color:#fff;font-weight:900;padding:6px 14px;border-radius:99px;box-shadow:0 4px 12px rgba(0,0,0,.4);animation:pop .9s forwards;z-index:3;white-space:nowrap}
+  @keyframes pop{0%{opacity:0;transform:translate(-50%,10px) scale(.6)}20%{opacity:1;transform:translate(-50%,0) scale(1.1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px)}}
+
+  /* ΑΠΟΤΕΛΕΣΜΑΤΑ */
+  .podium{width:100%;display:flex;flex-direction:column;gap:6px}
+  .prow{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.12);border-radius:14px;padding:8px 12px;min-height:46px}
+  .prow.me{background:rgba(251,191,36,.28);border:2px solid var(--gold)}
+  .prow .pl{font-size:22px;width:30px;text-align:center}
+  .prow .pn{flex:1;font-weight:800}
+  .prow .pt{font-size:13px;color:var(--dim)}
+  .stars{font-size:38px;letter-spacing:4px}
+  .stat{color:var(--dim);font-size:14px;text-align:center;line-height:1.5}
+  .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .hand{font-size:20px;text-align:center;line-height:1.5}
+  .hand b{color:var(--gold)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="snail-sym" viewBox="0 0 64 48">
+      <ellipse cx="30" cy="41" rx="28" ry="6" style="fill:#7bd88f"/>
+      <path d="M44 41 Q52 40 56 30 Q58 24 62 28 Q64 36 60 41 Z" style="fill:#7bd88f"/>
+      <circle cx="57" cy="31" r="7" style="fill:#7bd88f"/>
+      <path d="M55 24 L52 12 M60 25 L63 13" stroke="#5fbf75" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <circle cx="52" cy="11" r="3" fill="#fff"/><circle cx="63" cy="12" r="3" fill="#fff"/>
+      <circle cx="52.8" cy="11" r="1.4" fill="#222"/><circle cx="63.8" cy="12" r="1.4" fill="#222"/>
+      <path d="M55 35 Q58 38 61 35" stroke="#2a5a36" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <g class="wing"><path d="M14 18 Q2 -4 -6 8 Q4 8 8 14 Z" fill="#fff" stroke="#9bd" stroke-width="1"/><path d="M20 14 Q12 -10 0 -4 Q10 0 14 12 Z" fill="#fff" stroke="#9bd" stroke-width="1"/></g>
+      <circle cx="26" cy="26" r="18" style="fill:var(--shell,#ff7a1a)" stroke="rgba(0,0,0,.25)" stroke-width="2"/>
+      <path d="M26 26 a3 3 0 1 1 3 3 a7 7 0 1 1 -7 -7 a11 11 0 1 1 11 11" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2.5" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="app">
+
+  <!-- ΤΙΤΛΟΣ -->
+  <section id="s-title" class="screen on">
+    <div class="mini"><button class="ibtn" id="t-mute" aria-label="Ήχος">🔊</button></div>
+    <div class="inner">
+      <div class="mascot" style="--shell:#ff7a1a"><svg class="snail"><use href="#snail-sym"/></svg></div>
+      <h1>Ρηματοδρόμος<small>Ο Ρηματίξ τρέχει με τη δύναμη της γραμματικής!</small></h1>
+      <p class="tagline">Διάλεξε τον σωστό τύπο του ρήματος. Σωστή απάντηση = ένα βήμα προς τον τερματισμό. Τρεις σωστές στη σειρά = Νίτρο!</p>
+      <div class="seg" id="modeSeg">
+        <button data-mode="solo" class="on">🏁 Κούρσα</button>
+        <button data-mode="versus">⚔️ Ντέρμπι</button>
+      </div>
+      <div class="names" id="names" hidden>
+        <label>Παίκτης 1<input id="n1" maxlength="12" autocomplete="off"></label>
+        <label>Παίκτης 2<input id="n2" maxlength="12" autocomplete="off"></label>
+      </div>
+      <div class="tiers" id="tiers"></div>
+      <button class="btn big" id="btnStart">Στις θέσεις σας! 🏁</button>
+    </div>
+  </section>
+
+  <!-- ΠΙΣΤΑ -->
+  <section id="s-game" class="screen">
+    <div class="hud">
+      <button class="ibtn" id="btnPause" aria-label="Παύση">⏸</button>
+      <div class="mid"><b id="hudTier"></b><span id="hudInfo"></span></div>
+      <button class="ibtn" id="g-mute" aria-label="Ήχος">🔊</button>
+    </div>
+    <div id="track"></div>
+    <div id="qcard">
+      <div id="qkind"></div>
+      <div id="qtext"></div>
+      <div id="qsub"></div>
+      <div id="opts"></div>
+      <div id="fb" hidden></div>
+    </div>
+  </section>
+
+  <!-- ΑΠΟΤΕΛΕΣΜΑΤΑ -->
+  <section id="s-result" class="screen">
+    <div class="inner">
+      <div class="mascot" id="resMascot" style="--shell:#ff7a1a"><svg class="snail"><use href="#snail-sym"/></svg></div>
+      <h2 id="resTitle"></h2>
+      <div class="stars" id="resStars"></div>
+      <div class="podium" id="podium"></div>
+      <div class="stat" id="resStat"></div>
+      <div class="row">
+        <button class="btn" id="btnAgain">Ξανά! 🔁</button>
+        <button class="btn ghost" id="btnHome">Αρχική</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ΠΑΥΣΗ -->
+  <section id="ov-pause" class="screen veil">
+    <div class="inner">
+      <h2>⏸ Παύση</h2>
+      <button class="btn big" id="btnResume">Συνέχεια ▶</button>
+      <button class="btn ghost" id="btnQuit">Έξοδος</button>
+    </div>
+  </section>
+
+  <!-- ΠΑΣΑΡΙΣΜΑ ΚΙΝΗΤΟΥ -->
+  <section id="ov-hand" class="screen veil">
+    <div class="inner">
+      <div class="hand" id="handTxt"></div>
+      <button class="btn big" id="btnHand">Έτοιμος/η! 🏁</button>
+    </div>
+  </section>
+</div>
+
+<!-- ============ ΛΟΓΙΚΗ (καθαρή, δοκιμάζεται σε node) ============ -->
+<script id="logic">
+/* Βάση ρημάτων χειροποίητη. Για κάθε ρήμα καταχωρούνται με το χέρι: ενεστώτας, παρατατικός,
+   αόριστος, υποτακτική αορίστου (για το «θα + …») και το απαρέμφατο (για το «έχω/είχα + …»).
+   Οι σύνθετοι χρόνοι προκύπτουν μόνο με σύνθεση αυτών των έτοιμων τύπων με τα «θα», «έχω», «είχα». */
+const PERSONS = [
+  { id: 0, name: 'α΄ ενικό', pron: 'εγώ' },
+  { id: 1, name: 'β΄ ενικό', pron: 'εσύ' },
+  { id: 2, name: 'γ΄ ενικό', pron: 'αυτός / αυτή / αυτό' },
+  { id: 3, name: 'α΄ πληθυντικό', pron: 'εμείς' },
+  { id: 4, name: 'β΄ πληθυντικό', pron: 'εσείς' },
+  { id: 5, name: 'γ΄ πληθυντικό', pron: 'αυτοί / αυτές / αυτά' }
+];
+const TENSES = [
+  { id: 'pres',  name: 'Ενεστώτας', rule: 'Ο ενεστώτας δείχνει κάτι που γίνεται τώρα ή συχνά.' },
+  { id: 'impf',  name: 'Παρατατικός', rule: 'Ο παρατατικός δείχνει κάτι που γινόταν στο παρελθόν και διαρκούσε ή επαναλαμβανόταν.' },
+  { id: 'aor',   name: 'Αόριστος', rule: 'Ο αόριστος δείχνει κάτι που έγινε στο παρελθόν μία φορά και τελείωσε.' },
+  { id: 'fcont', name: 'Εξακολουθητικός μέλλοντας', rule: 'Ο εξακολουθητικός μέλλοντας (θα + ενεστώτας) δείχνει κάτι που θα διαρκέσει ή θα επαναλαμβάνεται στο μέλλον.' },
+  { id: 'fsimp', name: 'Συνοπτικός μέλλοντας', rule: 'Ο συνοπτικός μέλλοντας (θα + τύπος του αορίστου) δείχνει κάτι που θα γίνει μία φορά και θα τελειώσει.' },
+  { id: 'perf',  name: 'Παρακείμενος', rule: 'Ο παρακείμενος (έχω + απαρέμφατο) δείχνει κάτι που έχει γίνει και το αποτέλεσμά του φαίνεται ακόμα.' },
+  { id: 'plup',  name: 'Υπερσυντέλικος', rule: 'Ο υπερσυντέλικος (είχα + απαρέμφατο) δείχνει κάτι που είχε γίνει πριν από κάτι άλλο στο παρελθόν.' }
+];
+const TENSE = {}; TENSES.forEach(t => TENSE[t.id] = t);
+const HAVE = ['έχω', 'έχεις', 'έχει', 'έχουμε', 'έχετε', 'έχουν'];
+const HAD = ['είχα', 'είχες', 'είχε', 'είχαμε', 'είχατε', 'είχαν'];
+
+/* raw: 'ενεστώτας | παρατατικός | αόριστος | υποτακτική αορίστου | απαρέμφατο'  (6 τύποι ο καθένας, εκτός απαρεμφάτου)
+   aug: 'i' = ο παρατατικός ενικού παίρνει συλλαβική αύξηση έ-, 'a' = το ίδιο ο αόριστος.
+   level: 1 = κανονικό, 3 = ανώμαλο / πιο δύσκολο. */
+const VERBS = [];
+function mk(lemma, voice, level, aug, pair, raw) {
+  const p = raw.split('|').map(s => s.trim().split(/\s+/));
+  const [pres, impf, aor, subj, apar] = p;
+  const f = {
+    pres, impf, aor,
+    fcont: pres.map(x => 'θα ' + x),
+    fsimp: subj.map(x => 'θα ' + x),
+    perf: HAVE.map(x => x + ' ' + apar[0]),
+    plup: HAD.map(x => x + ' ' + apar[0])
+  };
+  VERBS.push({ lemma, voice, level, aug, pair, forms: f, raw: p });
+}
+// --- Ενεργητικά, κανονικά ---
+mk('γράφω', 'act', 1, 'ia', null, 'γράφω γράφεις γράφει γράφουμε γράφετε γράφουν | έγραφα έγραφες έγραφε γράφαμε γράφατε έγραφαν | έγραψα έγραψες έγραψε γράψαμε γράψατε έγραψαν | γράψω γράψεις γράψει γράψουμε γράψετε γράψουν | γράψει');
+mk('παίζω', 'act', 1, 'ia', null, 'παίζω παίζεις παίζει παίζουμε παίζετε παίζουν | έπαιζα έπαιζες έπαιζε παίζαμε παίζατε έπαιζαν | έπαιξα έπαιξες έπαιξε παίξαμε παίξατε έπαιξαν | παίξω παίξεις παίξει παίξουμε παίξετε παίξουν | παίξει');
+mk('τρέχω', 'act', 1, 'ia', null, 'τρέχω τρέχεις τρέχει τρέχουμε τρέχετε τρέχουν | έτρεχα έτρεχες έτρεχε τρέχαμε τρέχατε έτρεχαν | έτρεξα έτρεξες έτρεξε τρέξαμε τρέξατε έτρεξαν | τρέξω τρέξεις τρέξει τρέξουμε τρέξετε τρέξουν | τρέξει');
+mk('κλείνω', 'act', 1, 'ia', null, 'κλείνω κλείνεις κλείνει κλείνουμε κλείνετε κλείνουν | έκλεινα έκλεινες έκλεινε κλείναμε κλείνατε έκλειναν | έκλεισα έκλεισες έκλεισε κλείσαμε κλείσατε έκλεισαν | κλείσω κλείσεις κλείσει κλείσουμε κλείσετε κλείσουν | κλείσει');
+mk('κόβω', 'act', 1, 'ia', null, 'κόβω κόβεις κόβει κόβουμε κόβετε κόβουν | έκοβα έκοβες έκοβε κόβαμε κόβατε έκοβαν | έκοψα έκοψες έκοψε κόψαμε κόψατε έκοψαν | κόψω κόψεις κόψει κόψουμε κόψετε κόψουν | κόψει');
+mk('μένω', 'act', 1, 'ia', null, 'μένω μένεις μένει μένουμε μένετε μένουν | έμενα έμενες έμενε μέναμε μένατε έμεναν | έμεινα έμεινες έμεινε μείναμε μείνατε έμειναν | μείνω μείνεις μείνει μείνουμε μείνετε μείνουν | μείνει');
+mk('βάζω', 'act', 1, 'ia', null, 'βάζω βάζεις βάζει βάζουμε βάζετε βάζουν | έβαζα έβαζες έβαζε βάζαμε βάζατε έβαζαν | έβαλα έβαλες έβαλε βάλαμε βάλατε έβαλαν | βάλω βάλεις βάλει βάλουμε βάλετε βάλουν | βάλει');
+mk('φεύγω', 'act', 1, 'ia', null, 'φεύγω φεύγεις φεύγει φεύγουμε φεύγετε φεύγουν | έφευγα έφευγες έφευγε φεύγαμε φεύγατε έφευγαν | έφυγα έφυγες έφυγε φύγαμε φύγατε έφυγαν | φύγω φύγεις φύγει φύγουμε φύγετε φύγουν | φύγει');
+mk('διαβάζω', 'act', 1, '', null, 'διαβάζω διαβάζεις διαβάζει διαβάζουμε διαβάζετε διαβάζουν | διάβαζα διάβαζες διάβαζε διαβάζαμε διαβάζατε διάβαζαν | διάβασα διάβασες διάβασε διαβάσαμε διαβάσατε διάβασαν | διαβάσω διαβάσεις διαβάσει διαβάσουμε διαβάσετε διαβάσουν | διαβάσει');
+mk('δουλεύω', 'act', 1, '', null, 'δουλεύω δουλεύεις δουλεύει δουλεύουμε δουλεύετε δουλεύουν | δούλευα δούλευες δούλευε δουλεύαμε δουλεύατε δούλευαν | δούλεψα δούλεψες δούλεψε δουλέψαμε δουλέψατε δούλεψαν | δουλέψω δουλέψεις δουλέψει δουλέψουμε δουλέψετε δουλέψουν | δουλέψει');
+mk('φωνάζω', 'act', 1, '', null, 'φωνάζω φωνάζεις φωνάζει φωνάζουμε φωνάζετε φωνάζουν | φώναζα φώναζες φώναζε φωνάζαμε φωνάζατε φώναζαν | φώναξα φώναξες φώναξε φωνάξαμε φωνάξατε φώναξαν | φωνάξω φωνάξεις φωνάξει φωνάξουμε φωνάξετε φωνάξουν | φωνάξει');
+mk('κοιτάζω', 'act', 1, '', null, 'κοιτάζω κοιτάζεις κοιτάζει κοιτάζουμε κοιτάζετε κοιτάζουν | κοίταζα κοίταζες κοίταζε κοιτάζαμε κοιτάζατε κοίταζαν | κοίταξα κοίταξες κοίταξε κοιτάξαμε κοιτάξατε κοίταξαν | κοιτάξω κοιτάξεις κοιτάξει κοιτάξουμε κοιτάξετε κοιτάξουν | κοιτάξει');
+// --- Β΄ συζυγία ---
+mk('αγαπώ', 'act', 1, '', null, 'αγαπώ αγαπάς αγαπά αγαπάμε αγαπάτε αγαπούν | αγαπούσα αγαπούσες αγαπούσε αγαπούσαμε αγαπούσατε αγαπούσαν | αγάπησα αγάπησες αγάπησε αγαπήσαμε αγαπήσατε αγάπησαν | αγαπήσω αγαπήσεις αγαπήσει αγαπήσουμε αγαπήσετε αγαπήσουν | αγαπήσει');
+mk('μιλώ', 'act', 1, '', null, 'μιλώ μιλάς μιλά μιλάμε μιλάτε μιλούν | μιλούσα μιλούσες μιλούσε μιλούσαμε μιλούσατε μιλούσαν | μίλησα μίλησες μίλησε μιλήσαμε μιλήσατε μίλησαν | μιλήσω μιλήσεις μιλήσει μιλήσουμε μιλήσετε μιλήσουν | μιλήσει');
+mk('περπατώ', 'act', 1, '', null, 'περπατώ περπατάς περπατά περπατάμε περπατάτε περπατούν | περπατούσα περπατούσες περπατούσε περπατούσαμε περπατούσατε περπατούσαν | περπάτησα περπάτησες περπάτησε περπατήσαμε περπατήσατε περπάτησαν | περπατήσω περπατήσεις περπατήσει περπατήσουμε περπατήσετε περπατήσουν | περπατήσει');
+mk('ρωτώ', 'act', 1, '', null, 'ρωτώ ρωτάς ρωτά ρωτάμε ρωτάτε ρωτούν | ρωτούσα ρωτούσες ρωτούσε ρωτούσαμε ρωτούσατε ρωτούσαν | ρώτησα ρώτησες ρώτησε ρωτήσαμε ρωτήσατε ρώτησαν | ρωτήσω ρωτήσεις ρωτήσει ρωτήσουμε ρωτήσετε ρωτήσουν | ρωτήσει');
+mk('βοηθώ', 'act', 1, '', null, 'βοηθώ βοηθάς βοηθά βοηθάμε βοηθάτε βοηθούν | βοηθούσα βοηθούσες βοηθούσε βοηθούσαμε βοηθούσατε βοηθούσαν | βοήθησα βοήθησες βοήθησε βοηθήσαμε βοηθήσατε βοήθησαν | βοηθήσω βοηθήσεις βοηθήσει βοηθήσουμε βοηθήσετε βοηθήσουν | βοηθήσει');
+// --- Ενεργητικά με παθητικό ζεύγος ---
+mk('πλένω', 'act', 1, 'ia', 'πλένομαι', 'πλένω πλένεις πλένει πλένουμε πλένετε πλένουν | έπλενα έπλενες έπλενε πλέναμε πλένατε έπλεναν | έπλυνα έπλυνες έπλυνε πλύναμε πλύνατε έπλυναν | πλύνω πλύνεις πλύνει πλύνουμε πλύνετε πλύνουν | πλύνει');
+mk('ντύνω', 'act', 1, 'ia', 'ντύνομαι', 'ντύνω ντύνεις ντύνει ντύνουμε ντύνετε ντύνουν | έντυνα έντυνες έντυνε ντύναμε ντύνατε έντυναν | έντυσα έντυσες έντυσε ντύσαμε ντύσατε έντυσαν | ντύσω ντύσεις ντύσει ντύσουμε ντύσετε ντύσουν | ντύσει');
+mk('λύνω', 'act', 1, 'ia', 'λύνομαι', 'λύνω λύνεις λύνει λύνουμε λύνετε λύνουν | έλυνα έλυνες έλυνε λύναμε λύνατε έλυναν | έλυσα έλυσες έλυσε λύσαμε λύσατε έλυσαν | λύσω λύσεις λύσει λύσουμε λύσετε λύσουν | λύσει');
+// --- Ανώμαλα / πιο δύσκολα ---
+mk('ανοίγω', 'act', 3, '', null, 'ανοίγω ανοίγεις ανοίγει ανοίγουμε ανοίγετε ανοίγουν | άνοιγα άνοιγες άνοιγε ανοίγαμε ανοίγατε άνοιγαν | άνοιξα άνοιξες άνοιξε ανοίξαμε ανοίξατε άνοιξαν | ανοίξω ανοίξεις ανοίξει ανοίξουμε ανοίξετε ανοίξουν | ανοίξει');
+mk('ακούω', 'act', 3, '', null, 'ακούω ακούς ακούει ακούμε ακούτε ακούνε | άκουγα άκουγες άκουγε ακούγαμε ακούγατε άκουγαν | άκουσα άκουσες άκουσε ακούσαμε ακούσατε άκουσαν | ακούσω ακούσεις ακούσει ακούσουμε ακούσετε ακούσουν | ακούσει');
+mk('ζω', 'act', 3, '', null, 'ζω ζεις ζει ζούμε ζείτε ζουν | ζούσα ζούσες ζούσε ζούσαμε ζούσατε ζούσαν | έζησα έζησες έζησε ζήσαμε ζήσατε έζησαν | ζήσω ζήσεις ζήσει ζήσουμε ζήσετε ζήσουν | ζήσει');
+mk('μαθαίνω', 'act', 3, '', null, 'μαθαίνω μαθαίνεις μαθαίνει μαθαίνουμε μαθαίνετε μαθαίνουν | μάθαινα μάθαινες μάθαινε μαθαίναμε μαθαίνατε μάθαιναν | έμαθα έμαθες έμαθε μάθαμε μάθατε έμαθαν | μάθω μάθεις μάθει μάθουμε μάθετε μάθουν | μάθει');
+mk('δίνω', 'act', 3, 'i', null, 'δίνω δίνεις δίνει δίνουμε δίνετε δίνουν | έδινα έδινες έδινε δίναμε δίνατε έδιναν | έδωσα έδωσες έδωσε δώσαμε δώσατε έδωσαν | δώσω δώσεις δώσει δώσουμε δώσετε δώσουν | δώσει');
+mk('παίρνω', 'act', 3, 'i', null, 'παίρνω παίρνεις παίρνει παίρνουμε παίρνετε παίρνουν | έπαιρνα έπαιρνες έπαιρνε παίρναμε παίρνατε έπαιρναν | πήρα πήρες πήρε πήραμε πήρατε πήραν | πάρω πάρεις πάρει πάρουμε πάρετε πάρουν | πάρει');
+mk('λέω', 'act', 3, 'i', null, 'λέω λες λέει λέμε λέτε λένε | έλεγα έλεγες έλεγε λέγαμε λέγατε έλεγαν | είπα είπες είπε είπαμε είπατε είπαν | πω πεις πει πούμε πείτε πουν | πει');
+mk('τρώω', 'act', 3, 'i', null, 'τρώω τρως τρώει τρώμε τρώτε τρώνε | έτρωγα έτρωγες έτρωγε τρώγαμε τρώγατε έτρωγαν | έφαγα έφαγες έφαγε φάγαμε φάγατε έφαγαν | φάω φας φάει φάμε φάτε φάνε | φάει');
+mk('πηγαίνω', 'act', 3, '', null, 'πηγαίνω πηγαίνεις πηγαίνει πηγαίνουμε πηγαίνετε πηγαίνουν | πήγαινα πήγαινες πήγαινε πηγαίναμε πηγαίνατε πήγαιναν | πήγα πήγες πήγε πήγαμε πήγατε πήγαν | πάω πας πάει πάμε πάτε πάνε | πάει');
+mk('βλέπω', 'act', 3, 'i', null, 'βλέπω βλέπεις βλέπει βλέπουμε βλέπετε βλέπουν | έβλεπα έβλεπες έβλεπε βλέπαμε βλέπατε έβλεπαν | είδα είδες είδε είδαμε είδατε είδαν | δω δεις δει δούμε δείτε δουν | δει');
+mk('πίνω', 'act', 3, 'i', null, 'πίνω πίνεις πίνει πίνουμε πίνετε πίνουν | έπινα έπινες έπινε πίναμε πίνατε έπιναν | ήπια ήπιες ήπιε ήπιαμε ήπιατε ήπιαν | πιω πιεις πιει πιούμε πιείτε πιουν | πιει');
+// --- Παθητική φωνή ---
+mk('λύνομαι', 'pass', 4, '', 'λύνω', 'λύνομαι λύνεσαι λύνεται λυνόμαστε λύνεστε λύνονται | λυνόμουν λυνόσουν λυνόταν λυνόμασταν λυνόσασταν λύνονταν | λύθηκα λύθηκες λύθηκε λυθήκαμε λυθήκατε λύθηκαν | λυθώ λυθείς λυθεί λυθούμε λυθείτε λυθούν | λυθεί');
+mk('ντύνομαι', 'pass', 4, '', 'ντύνω', 'ντύνομαι ντύνεσαι ντύνεται ντυνόμαστε ντύνεστε ντύνονται | ντυνόμουν ντυνόσουν ντυνόταν ντυνόμασταν ντυνόσασταν ντύνονταν | ντύθηκα ντύθηκες ντύθηκε ντυθήκαμε ντυθήκατε ντύθηκαν | ντυθώ ντυθείς ντυθεί ντυθούμε ντυθείτε ντυθούν | ντυθεί');
+mk('πλένομαι', 'pass', 4, '', 'πλένω', 'πλένομαι πλένεσαι πλένεται πλενόμαστε πλένεστε πλένονται | πλενόμουν πλενόσουν πλενόταν πλενόμασταν πλενόσασταν πλένονταν | πλύθηκα πλύθηκες πλύθηκε πλυθήκαμε πλυθήκατε πλύθηκαν | πλυθώ πλυθείς πλυθεί πλυθούμε πλυθείτε πλυθούν | πλυθεί');
+mk('έρχομαι', 'pass', 4, '', null, 'έρχομαι έρχεσαι έρχεται ερχόμαστε έρχεστε έρχονται | ερχόμουν ερχόσουν ερχόταν ερχόμασταν ερχόσασταν έρχονταν | ήρθα ήρθες ήρθε ήρθαμε ήρθατε ήρθαν | έρθω έρθεις έρθει έρθουμε έρθετε έρθουν | έρθει');
+const BY_LEMMA = {}; VERBS.forEach(v => BY_LEMMA[v.lemma] = v);
+
+const TIERS = {
+  1: { name: 'Ζέσταμα', desc: 'Ενεστώτας, παρατατικός, αόριστος', tenses: ['pres', 'impf', 'aor'], recog: 0, voice: 0, passive: 0 },
+  2: { name: 'Μέλλοντες', desc: '+ εξακολουθητικός και συνοπτικός μέλλοντας', tenses: ['pres', 'impf', 'aor', 'fcont', 'fsimp'], recog: 0, voice: 0, passive: 0 },
+  3: { name: 'Όλοι οι χρόνοι', desc: '+ παρακείμενος, υπερσυντέλικος, «σε ποιον χρόνο είναι;»', tenses: ['pres', 'impf', 'aor', 'fcont', 'fsimp', 'perf', 'plup'], recog: 0.3, voice: 0, passive: 0 },
+  4: { name: 'Και παθητική', desc: 'Όλα μαζί + παθητική φωνή (λύνω → λύνομαι)', tenses: ['pres', 'impf', 'aor', 'fcont', 'fsimp', 'perf', 'plup'], recog: 0.2, voice: 0.2, passive: 0.35 }
+};
+
+function poolFor(tier) {
+  return VERBS.filter(v => v.voice === 'act' ? (tier >= 3 || v.level === 1) : tier >= 4);
+}
+function tensesOfForm(lemma, text) {
+  const v = BY_LEMMA[lemma]; const out = [];
+  TENSES.forEach(t => v.forms[t.id].forEach((f, p) => { if (f === text) out.push({ tense: t.id, person: p }); }));
+  return out;
+}
+function rint(rng, n) { return Math.floor(rng() * n); }
+function pickOf(rng, arr) { return arr[rint(rng, arr.length)]; }
+function shuffle(rng, a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rint(rng, i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+// Επιλογή 3 παραπλανητικών από τους τύπους ΤΟΥ ΙΔΙΟΥ ρήματος: ίδιο πρόσωπο άλλος χρόνος, ίδιος χρόνος άλλο πρόσωπο, τυχαίο.
+function formOptions(rng, verb, tenseIds, tense, person) {
+  const correct = verb.forms[tense][person];
+  const all = [];
+  tenseIds.forEach(t => verb.forms[t].forEach((text, p) => { if (text !== correct) all.push({ text, tense: t, person: p }); }));
+  const chosen = [];
+  const take = list => {
+    const cand = shuffle(rng, list.filter(c => c.text !== correct && !chosen.some(x => x.text === c.text)));
+    if (cand.length) chosen.push(cand[0]);
+  };
+  take(all.filter(c => c.person === person && c.tense !== tense));
+  take(all.filter(c => c.tense === tense && c.person !== person));
+  take(all.filter(c => c.tense !== tense && c.person !== person));
+  while (chosen.length < 3) { const before = chosen.length; take(all); if (chosen.length === before) break; }
+  const opts = shuffle(rng, [{ text: correct, tense, person }].concat(chosen));
+  return opts;
+}
+
+function augTip(verb, tense, person) {
+  if (verb.voice !== 'act') return '';
+  if (tense === 'impf' && verb.aug.includes('i') || tense === 'aor' && verb.aug.includes('a')) {
+    if ([0, 1, 2, 5].includes(person)) return ' Στον ενικό και στο γ΄ πληθυντικό παίρνει αύξηση (έ-).';
+    return ' Στο α΄ και β΄ πληθυντικό ο τόνος πάει μπροστά και η αύξηση «χάνεται».';
+  }
+  return '';
+}
+
+function build(tier, rng) {
+  const T = TIERS[tier];
+  const r = rng();
+  let kind = 'form';
+  if (T.voice && r < T.voice) kind = 'voice';
+  else if (T.recog && r < (T.voice || 0) + T.recog) kind = 'recog';
+  const pool = poolFor(tier);
+  const acts = pool.filter(v => v.voice === 'act'), pass = pool.filter(v => v.voice === 'pass');
+  const tense = pickOf(rng, T.tenses), person = rint(rng, 6);
+  let q;
+  if (kind === 'voice') {
+    const verb = pickOf(rng, acts.filter(v => v.pair));
+    const pv = BY_LEMMA[verb.pair];
+    const shown = verb.forms[tense][person];
+    const opts = formOptions(rng, pv, T.tenses, tense, person);
+    const correct = pv.forms[tense][person];
+    q = {
+      kind, verb: verb.lemma, target: pv.lemma, tense, person,
+      prompt: 'Ποιος είναι ο ίδιος τύπος στην παθητική φωνή: «' + shown + '»;',
+      sub: verb.lemma + ' → ' + pv.lemma + ' · ίδιος χρόνος και πρόσωπο',
+      shown, opts,
+      explain: 'Στην ενεργητική φωνή το υποκείμενο κάνει την ενέργεια, στην παθητική την παθαίνει. «' + shown + '» (' + verb.lemma + ') γίνεται «' + correct + '» (' + pv.lemma + ') — ' + TENSE[tense].name.toLowerCase() + ', ' + PERSONS[person].name + '.'
+    };
+  } else if (kind === 'recog') {
+    const verb = pickOf(rng, rng() < T.passive ? pass.concat(acts) : acts);
+    const form = verb.forms[tense][person];
+    const hits = tensesOfForm(verb.lemma, form);
+    if (hits.length !== 1) return null;
+    const others = shuffle(rng, T.tenses.filter(t => t !== tense)).slice(0, 3);
+    const opts = shuffle(rng, [tense].concat(others)).map(t => ({ text: TENSE[t].name, tense: t, person: null }));
+    q = {
+      kind, verb: verb.lemma, tense, person, shown: form,
+      prompt: 'Σε ποιον χρόνο είναι το «' + form + '»;',
+      sub: 'ρήμα: ' + verb.lemma,
+      opts,
+      explain: '«' + form + '» είναι ' + TENSE[tense].name.toLowerCase() + ', ' + PERSONS[person].name + ' (' + PERSONS[person].pron + '). ' + TENSE[tense].rule
+    };
+  } else {
+    const verb = pickOf(rng, (T.passive && rng() < T.passive && pass.length) ? pass : acts);
+    const opts = formOptions(rng, verb, T.tenses, tense, person);
+    const correct = verb.forms[tense][person];
+    q = {
+      kind, verb: verb.lemma, tense, person,
+      prompt: 'Ο ' + TENSE[tense].name.toLowerCase() + ' του «' + verb.lemma + '», ' + PERSONS[person].name + ';',
+      sub: PERSONS[person].pron,
+      opts,
+      explain: 'Σωστό: «' + correct + '». ' + TENSE[tense].rule + augTip(verb, tense, person)
+    };
+  }
+  q.options = q.opts.map(o => o.text);
+  q.optMeta = q.opts.map(o => ({ tense: o.tense, person: o.person }));
+  q.correct = q.kind === 'recog' ? TENSE[q.tense].name : (q.kind === 'voice' ? BY_LEMMA[q.target].forms[q.tense][q.person] : BY_LEMMA[q.verb].forms[q.tense][q.person]);
+  q.answer = q.options.indexOf(q.correct);
+  q.key = [q.kind, q.verb, q.tense, q.person].join('|');
+  delete q.opts;
+  return q;
+}
+
+function genQuestion(tier, rng, recent) {
+  rng = rng || Math.random; recent = recent || [];
+  let last = null;
+  for (let k = 0; k < 40; k++) {
+    const q = build(tier, rng);
+    if (!q) continue;
+    last = q;
+    if (!recent.includes(q.key)) return q;
+  }
+  return last || build(tier, rng);
+}
+function labelOfOption(q, i) {   // πού ανήκει η επιλογή: «είναι παρατατικός, β΄ ενικό»
+  const m = q.optMeta[i];
+  if (q.kind === 'recog') return '';
+  return '«' + q.options[i] + '» είναι ' + TENSE[m.tense].name.toLowerCase() + ', ' + PERSONS[m.person].name + '.';
+}
+if (typeof module !== 'undefined') module.exports = { PERSONS, TENSES, TENSE, VERBS, BY_LEMMA, TIERS, HAVE, HAD, poolFor, tensesOfForm, genQuestion, labelOfOption };
+</script>
+
+<!-- ============ ΠΑΙΧΝΙΔΙ ============ -->
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('verbs.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('verbs.' + k, JSON.stringify(v)); } catch (e) {} }
+  };
+  let stars = store.get('stars', {}), best = store.get('best', {}), soundOn = store.get('sound', true) !== false;
+  let names = store.get('names', ['Παίκτης 1', 'Παίκτης 2']);
+  let pref = store.get('pref', { mode: 'solo', tier: 1 });
+  const FINISH = 10;
+  // Ρυθμοί αντιπάλων (δευτερόλεπτα ανά βήμα) και κλιμάκωση ανά επίπεδο
+  const AI = [
+    { id: 'eagle', name: 'Αετός', emoji: '🦅', pace: 4.6 },
+    { id: 'hare', name: 'Λαγός', emoji: '🐇', pace: 6.2 },
+    { id: 'turtle', name: 'Χελώνα', emoji: '🐢', pace: 9 }
+  ];
+  const PACE_SCALE = [1, 1, 1.1, 1.2, 1.3];
+
+  /* ---------- Ήχος ---------- */
+  let AC = null;
+  function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (AC && AC.state === 'suspended') AC.resume(); return AC; }
+  function tone(f, t0, d, type, vol) {
+    if (!soundOn) return; const c = ac(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain(); o.type = type || 'sine'; o.frequency.value = f;
+    const t = c.currentTime + t0; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + d + 0.05);
+  }
+  const sfx = {
+    tap() { tone(520, 0, .06, 'triangle', .1); },
+    step() { tone(440, 0, .07, 'square', .08); tone(660, .07, .09, 'square', .08); },
+    nitro() { [400, 500, 650, 820, 1000].forEach((f, i) => tone(f, i * .05, .12, 'sawtooth', .09)); },
+    bad() { tone(200, 0, .18, 'sawtooth', .12); tone(140, .12, .25, 'sawtooth', .12); },
+    fanfare() { [[523, 0], [523, .15], [523, .3], [659, .45], [784, .65], [659, .85], [784, 1.0, .5]].forEach(n => tone(n[0], n[1], n[2] || .16, 'sawtooth', .1)); },
+    lose() { [392, 349, 330, 262].forEach((f, i) => tone(f, i * .2, .25, 'triangle', .12)); }
+  };
+  function setSoundUI() { ['t-mute', 'g-mute'].forEach(id => $(id).textContent = soundOn ? '🔊' : '🔇'); }
+  function toggleSound() { soundOn = !soundOn; store.set('sound', soundOn); setSoundUI(); if (soundOn) sfx.tap(); }
+  $('t-mute').addEventListener('click', toggleSound); $('g-mute').addEventListener('click', toggleSound);
+
+  /* ---------- Οθόνες ---------- */
+  function show(id) { ['s-title', 's-game', 's-result'].forEach(s => $(s).classList.toggle('on', s === id)); }
+
+  /* ---------- Τίτλος ---------- */
+  function renderTitle() {
+    $('n1').value = names[0]; $('n2').value = names[1];
+    document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.mode === pref.mode));
+    $('names').hidden = pref.mode !== 'versus';
+    const box = $('tiers'); box.innerHTML = '';
+    [1, 2, 3, 4].forEach(n => {
+      const T = TIERS[n]; const s = stars[n] || 0;
+      const b = document.createElement('button'); b.className = 'tier' + (pref.tier === n ? ' on' : '');
+      b.innerHTML = '<span class="num">' + n + '</span><span class="tt"><b>' + T.name + '</b><span>' + T.desc + '</span></span>' +
+        (pref.mode === 'solo' ? '<span class="st">' + '★'.repeat(s) + '<span style="opacity:.3">' + '★'.repeat(3 - s) + '</span><small>' + (best[n] ? 'ρεκόρ ' + best[n].toFixed(1) + '″' : '—') + '</small></span>' : '');
+      b.addEventListener('click', () => { sfx.tap(); pref.tier = n; store.set('pref', pref); renderTitle(); });
+      box.appendChild(b);
+    });
+  }
+  document.querySelectorAll('#modeSeg button').forEach(b => b.addEventListener('click', () => { sfx.tap(); pref.mode = b.dataset.mode; store.set('pref', pref); renderTitle(); }));
+  ['n1', 'n2'].forEach((id, i) => $(id).addEventListener('input', () => { names[i] = $(id).value.trim() || ('Παίκτης ' + (i + 1)); store.set('names', names); }));
+  $('btnStart').addEventListener('click', () => { sfx.tap(); ac(); startRace(); });
+  $('btnAgain').addEventListener('click', () => { sfx.tap(); startRace(); });
+  $('btnHome').addEventListener('click', () => { sfx.tap(); renderTitle(); show('s-title'); });
+
+  /* ---------- Κατάσταση αγώνα ---------- */
+  let G = null, rafId = 0, lastTs = 0, token = 0;
+
+  function snailHTML(shell) {
+    return '<span class="sp" style="--shell:' + shell + '"><svg class="snail" viewBox="0 0 64 48"><use href="#snail-sym"/></svg></span>';
+  }
+  function startRace() {
+    const tier = pref.tier, solo = pref.mode === 'solo';
+    token++;
+    const runners = solo
+      ? AI.map(a => ({ kind: 'ai', id: a.id, name: a.name, emoji: a.emoji, pace: a.pace * PACE_SCALE[tier], pos: 0, acc: 0, next: 0, fin: null }))
+          .concat([{ kind: 'me', id: 'me', name: 'Ρηματίξ', shell: '#ff7a1a', pos: 0, streak: 0, mistakes: 0, correct: 0, fin: null }])
+      : [{ kind: 'me', id: 'p1', name: names[0], shell: '#ff7a1a', pos: 0, streak: 0, mistakes: 0, correct: 0 },
+         { kind: 'me', id: 'p2', name: names[1], shell: '#8b5cf6', pos: 0, streak: 0, mistakes: 0, correct: 0 }];
+    runners.forEach(r => { if (r.kind === 'ai') r.next = r.pace * (0.8 + Math.random() * 0.4); });
+    G = { tier, solo, runners, time: 0, turn: 0, q: null, recent: [], locked: true, hold: false, paused: false, over: false, tok: token, place: 0 };
+    $('hudTier').textContent = TIERS[tier].name;
+    renderTrack(); show('s-game');
+    $('ov-pause').classList.remove('on'); $('ov-hand').classList.remove('on');
+    updateHud();
+    if (solo) { nextQuestion(); lastTs = performance.now(); cancelAnimationFrame(rafId); rafId = requestAnimationFrame(loop); }
+    else { cancelAnimationFrame(rafId); showHand(true); }
+  }
+
+  function renderTrack() {
+    const t = $('track'); t.innerHTML = '';
+    G.runners.forEach(r => {
+      const lane = document.createElement('div'); lane.className = 'lane'; lane.id = 'lane-' + r.id;
+      const el = r.kind === 'ai' ? '<span class="sp">' + r.emoji + '</span>' : snailHTML(r.shell);
+      lane.innerHTML = '<div class="lname">' + r.name + '</div><div class="rail"><div class="runner ' + (r.kind === 'me' ? 'me ' : '') + 'run" id="run-' + r.id + '">' + el + '</div></div>';
+      t.appendChild(lane); r.el = lane.querySelector('.runner'); r.lane = lane;
+    });
+    G.runners.forEach(placeRunner);
+  }
+  function placeRunner(r) {
+    const rail = r.lane.querySelector('.rail'); const w = rail.clientWidth || 260;
+    r.el.style.left = ((w - 46) * Math.min(r.pos, FINISH) / FINISH) + 'px';
+  }
+  window.addEventListener('resize', () => { if (G) G.runners.forEach(placeRunner); });
+
+  function updateHud() {
+    if (!G) return;
+    if (G.solo) {
+      const me = G.runners[3];
+      $('hudInfo').textContent = G.time.toFixed(1) + '″ · σερί ' + me.streak + (me.streak >= 2 ? ' 🔥' : '');
+    } else {
+      const c = cur();
+      $('hudInfo').textContent = 'Σειρά: ' + c.name + ' · σερί ' + c.streak;
+      G.runners.forEach(r => r.lane.classList.toggle('act', r === c));
+    }
+  }
+  const cur = () => G.solo ? G.runners[3] : G.runners[G.turn % 2];
+
+  /* ---------- Βρόχος (μόνο στη Κούρσα) ---------- */
+  function loop(ts) {
+    rafId = requestAnimationFrame(loop);
+    const dt = Math.min(0.1, (ts - lastTs) / 1000); lastTs = ts;
+    if (!G || G.over || G.paused || G.hold || !G.solo) return;
+    G.time += dt;
+    G.runners.forEach(r => {
+      if (r.kind !== 'ai' || r.fin !== null) return;
+      r.acc += dt;
+      if (r.acc >= r.next) {
+        r.acc -= r.next; r.next = r.pace * (0.8 + Math.random() * 0.4); r.pos++;
+        placeRunner(r);
+        if (r.pos >= FINISH) { r.fin = G.time; r.el.classList.remove('run'); r.el.classList.add('fin'); }
+      }
+    });
+    updateHud();
+    if (G.runners.slice(0, 3).every(r => r.fin !== null) && cur().fin === null) endRace();
+  }
+
+  /* ---------- Ερωτήσεις ---------- */
+  function nextQuestion() {
+    if (!G || G.over) return;
+    const q = genQuestion(G.tier, Math.random, G.recent);
+    G.recent.push(q.key); if (G.recent.length > 12) G.recent.shift();
+    G.q = q; G.locked = false; G.hold = false;
+    $('qkind').textContent = q.kind === 'recog' ? 'Αναγνώριση χρόνου' : q.kind === 'voice' ? 'Ενεργητική → Παθητική' : 'Βρες τον τύπο';
+    $('qtext').textContent = q.prompt; $('qsub').textContent = q.sub;
+    const box = $('opts'); box.innerHTML = ''; box.hidden = false;
+    q.options.forEach((o, i) => {
+      const b = document.createElement('button'); b.className = 'opt'; b.textContent = o;
+      b.addEventListener('click', () => answer(i)); box.appendChild(b);
+    });
+    $('fb').hidden = true; updateHud();
+  }
+
+  function flashRunner(r, cls, ms) { r.el.classList.remove('run'); r.el.classList.add(cls); setTimeout(() => { r.el.classList.remove(cls); if (!r.el.classList.contains('fin')) r.el.classList.add('run'); }, ms); }
+  function toast(txt) { const old = $('toast'); if (old) old.remove(); const t = document.createElement('div'); t.id = 'toast'; t.textContent = txt; $('qcard').appendChild(t); setTimeout(() => t.remove(), 950); }
+
+  function answer(i) {
+    if (!G || G.locked || G.over || G.paused) return;
+    G.locked = true;
+    const q = G.q, me = cur(), ok = i === q.answer, tok = G.tok;
+    const btns = $('opts').children;
+    btns[q.answer].classList.add('ok');
+    if (!ok) btns[i].classList.add('no');
+    Array.from(btns).forEach((b, k) => { if (k !== q.answer && k !== i) b.classList.add('dim'); });
+    if (ok) {
+      me.streak++; me.correct++;
+      const steps = me.streak >= 3 ? 2 : 1;
+      me.pos = Math.min(FINISH, me.pos + steps); placeRunner(me);
+      if (steps === 2) { sfx.nitro(); toast('Νίτρο! 🔥 +2'); } else sfx.step();
+      updateHud();
+      const done = me.pos >= FINISH;
+      if (done && G.solo) { me.fin = G.time; me.el.classList.add('fin'); setTimeout(() => { if (G.tok === tok) endRace(); }, 800); return; }
+      setTimeout(() => { if (G.tok === tok) afterTurn(); }, 750);
+    } else {
+      me.streak = 0; me.mistakes++; sfx.bad(); flashRunner(me, 'stumble', 650); updateHud();
+      G.hold = true;
+      const fb = $('fb'); fb.hidden = false;
+      let h = '<div class="hd bad">Όχι ακριβώς!</div>';
+      if (q.kind !== 'recog') h += '<div>Διάλεξες: ' + labelOfOption(q, i) + '</div>';
+      else h += '<div>Διάλεξες: ' + q.options[i] + '.</div>';
+      h += '<div class="rule">📒 ' + q.explain + '</div><button class="btn" id="btnNext">Συνέχεια ▶</button>';
+      fb.innerHTML = h;
+      $('btnNext').addEventListener('click', () => { sfx.tap(); if (G.tok === tok) { G.hold = false; afterTurn(); } });
+      fb.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+
+  function afterTurn() {
+    if (!G || G.over) return;
+    if (G.solo) { nextQuestion(); return; }
+    // Ντέρμπι: ολοκληρώνεται ο γύρος και μετά κρίνεται ο νικητής
+    if (G.turn % 2 === 1 && G.runners.some(r => r.pos >= FINISH)) { endRace(); return; }
+    G.turn++; showHand(false);
+  }
+
+  function showHand(first) {
+    const c = cur(); updateHud();
+    $('handTxt').innerHTML = (first ? 'Ξεκινάει ο/η ' : 'Δώσε το κινητό στον/στην ') + '<b>' + c.name + '</b>';
+    $('opts').hidden = true; $('fb').hidden = true;
+    $('qtext').textContent = '…'; $('qsub').textContent = ''; $('qkind').textContent = '';
+    $('ov-hand').classList.add('on');
+  }
+  $('btnHand').addEventListener('click', () => { sfx.tap(); $('ov-hand').classList.remove('on'); nextQuestion(); });
+
+  /* ---------- Τέλος ---------- */
+  function medal(n) { return ['🥇', '🥈', '🥉', '4️⃣'][n] || (n + 1); }
+  function endRace() {
+    if (!G || G.over) return; G.over = true; cancelAnimationFrame(rafId);
+    const tier = G.tier;
+    const mascot = $('resMascot');
+    if (G.solo) {
+      const me = G.runners[3];
+      const placed = G.runners.slice().sort((a, b) => {
+        const fa = a.fin === null ? Infinity : a.fin, fb2 = b.fin === null ? Infinity : b.fin;
+        return fa !== fb2 ? fa - fb2 : b.pos - a.pos;
+      });
+      const place = placed.indexOf(me);
+      const st = me.fin === null ? 0 : place === 0 ? (me.mistakes === 0 ? 3 : 2) : place === 1 ? 1 : 0;
+      if (st > (stars[tier] || 0)) { stars[tier] = st; store.set('stars', stars); }
+      if (place === 0 && me.fin !== null && (!best[tier] || me.fin < best[tier])) { best[tier] = me.fin; store.set('best', best); }
+      $('resTitle').textContent = place === 0 ? 'Πρώτος στον τερματισμό! 🏆' : place === 1 ? 'Δεύτερος! Πολύ κοντά!' : place === 2 ? 'Τρίτος — ξαναδοκίμασε!' : 'Τέταρτος — η γραμματική θέλει εξάσκηση!';
+      $('resStars').textContent = '★'.repeat(st) + '☆'.repeat(3 - st);
+      $('podium').innerHTML = placed.map((r, k) => '<div class="prow' + (r === me ? ' me' : '') + '"><span class="pl">' + medal(k) + '</span><span class="pn">' + (r.kind === 'ai' ? r.emoji + ' ' : '🐌 ') + r.name + '</span><span class="pt">' + (r.fin !== null ? r.fin.toFixed(1) + '″' : 'δεν τερμάτισε') + '</span></div>').join('');
+      $('resStat').innerHTML = 'Σωστές: ' + me.correct + ' · Λάθη: ' + me.mistakes + (best[tier] ? '<br>Ρεκόρ επιπέδου ' + tier + ': ' + best[tier].toFixed(1) + '″' : '') + (st === 3 ? '<br>Τέλεια κούρσα, χωρίς λάθος!' : '');
+      mascot.style.setProperty('--shell', '#ff7a1a');
+      if (place === 0) sfx.fanfare(); else sfx.lose();
+    } else {
+      const [a, b] = G.runners;
+      let w = null;
+      if (a.pos !== b.pos) w = a.pos > b.pos ? a : b; else if (a.mistakes !== b.mistakes) w = a.mistakes < b.mistakes ? a : b;
+      $('resTitle').textContent = w ? 'Νικητής: ' + w.name + '! 🏆' : 'Ισοπαλία! 🤝';
+      $('resStars').textContent = w ? '🏁' : '🤝';
+      $('podium').innerHTML = [a, b].map(r => '<div class="prow' + (r === w ? ' me' : '') + '"><span class="pl">' + (r === w ? '🥇' : (w ? '🥈' : '🤝')) + '</span><span class="pn">🐌 ' + r.name + '</span><span class="pt">' + Math.min(r.pos, FINISH) + '/' + FINISH + ' βήματα · ' + r.mistakes + ' λάθη</span></div>').join('');
+      $('resStat').textContent = 'Επίπεδο ' + tier + ' — ' + TIERS[tier].name;
+      mascot.style.setProperty('--shell', (w || a).shell);
+      sfx.fanfare();
+    }
+    show('s-result');
+  }
+
+  /* ---------- Παύση ---------- */
+  function pauseGame() { if (!G || G.over || G.paused) return; if (!$('s-game').classList.contains('on')) return; G.paused = true; $('ov-pause').classList.add('on'); }
+  function resumeGame() { if (!G) return; G.paused = false; lastTs = performance.now(); $('ov-pause').classList.remove('on'); }
+  $('btnPause').addEventListener('click', () => { sfx.tap(); pauseGame(); });
+  $('btnResume').addEventListener('click', () => { sfx.tap(); resumeGame(); });
+  $('btnQuit').addEventListener('click', () => { sfx.tap(); if (G) { G.over = true; G.tok = -1; } cancelAnimationFrame(rafId); $('ov-pause').classList.remove('on'); $('ov-hand').classList.remove('on'); renderTitle(); show('s-title'); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
+  window.feedbackContext = () => ({ game: 'verbs', mode: pref.mode, tier: pref.tier, stars });
+
+  setSoundUI(); renderTitle();
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+<script src="../feedback.js" data-fb-corner="br" defer></script>
+</body>
+</html>
